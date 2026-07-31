@@ -1,0 +1,86 @@
+name: Build Expo APK and Upload to Sauce Labs
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SAUCE_REGION: us-west-1
+
+jobs:
+  build-and-upload:
+    name: Build APK and upload
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Set up Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android APK with EAS
+        run: eas build --platform android --profile preview --non-interactive --wait
+
+      - name: Get finished APK URL
+        id: eas-build
+        shell: bash
+        run: |
+          build_url=$(eas build:list --platform android --status finished --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
+          test -n "$build_url"
+          test "$build_url" != "null"
+          echo "build_url=$build_url" >> "$GITHUB_OUTPUT"
+
+      - name: Download APK
+        run: curl --fail --location "${{ steps.eas-build.outputs.build_url }}" --output daily-focus.apk
+
+      - name: Upload APK to Sauce Labs storage
+        id: sauce-upload
+        shell: bash
+        env:
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+        run: |
+          response=$(curl --fail --silent --show-error --location \
+            --user "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" \
+            --request POST \
+            "https://api.${SAUCE_REGION}.saucelabs.com/v1/storage/upload" \
+            --form "payload=@daily-focus.apk" \
+            --form 'name=daily-focus.apk')
+          echo "$response"
+          app_id=$(echo "$response" | jq -r '.id // .storageId // "storage:filename=daily-focus.apk"')
+          echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
+
+      - name: Run Sauce Labs smoke test
+        env:
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+          SAUCE_APP: ${{ steps.sauce-upload.outputs.app_id }}
+          SAUCE_DEVICE: Android GoogleAPI Emulator
+          SAUCE_PLATFORM_VERSION: '14'
+        run: node tests/sauce-smoke.mjs
+
+      - name: Upload APK as GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-focus-apk
+          path: daily-focus.apk
+          retention-days: 7

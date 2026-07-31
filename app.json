@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Daily Focus",
+    "slug": "daily-focus",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#f7f7f2"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.dailyfocus"
+    },
+    "android": {
+      "package": "com.example.dailyfocus"
+    }
+  }
+}
