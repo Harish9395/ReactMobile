@@ -2,7 +2,7 @@ import { remote } from 'webdriverio'
 
 const driver = await remote({
   protocol: 'https:',
-  hostname: 'ondemand.us-west-1.saucelabs.com',
+  hostname: 'ondemand.eu-central-1.saucelabs.com',
   port: 443,
   path: '/wd/hub',
   user: process.env.SAUCE_USERNAME,
