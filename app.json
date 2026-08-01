@@ -15,6 +15,11 @@
     },
     "android": {
       "package": "com.example.dailyfocus"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "52c0ac7a-3556-40a6-9068-59afd26d757c"
+      }
     }
   }
 }
