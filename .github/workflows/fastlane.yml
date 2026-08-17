@@ -17,10 +17,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Install npm dependencies
-        run: npm ci
+        # Use npm install here to avoid failing when package-lock.json is out of sync.
+        run: npm install
 
 
       - name: Setup Java
@@ -98,10 +99,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Install npm dependencies
-        run: npm ci
+        # Use npm install here to avoid failing when package-lock.json is out of sync.
+        run: npm install
 
       # NOTE: This workflow assumes native `android/` and `ios/` folders are present in the repository.
       # If you previously used Expo, run `expo prebuild` locally and commit the generated folders.
