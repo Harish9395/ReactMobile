@@ -4,16 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "fastlane:android": "cd android && fastlane android apk",
+    "fastlane:ios": "cd ios && fastlane ios build",
+    "build:android:fastlane": "npm run fastlane:android",
+    "build:ios:fastlane": "npm run fastlane:ios"
   },
   "dependencies": {
-    "expo": "latest",
     "react": "latest",
     "react-native": "latest",
-    "@expo/vector-icons": "latest"
+    "react-native-vector-icons": "latest"
   },
   "devDependencies": {
     "webdriverio": "latest"

@@ -1,0 +1,15 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build iOS IPA (development or appstore depending on provisioning)"
+  lane :build do
+    if ENV['MATCH_PASSWORD']
+      match(type: "appstore")
+    end
+
+    build_app(scheme: ENV['SCHEME'] || "daily-focus")
+
+    ipa_path = Actions.lane_context[SharedValues::IPA_OUTPUT_PATH]
+    UI.message("Built IPA: #{ipa_path}") if ipa_path
+  end
+end

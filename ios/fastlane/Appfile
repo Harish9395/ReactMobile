@@ -1,0 +1,2 @@
+app_identifier("com.example.dailyfocus")
+apple_id(ENV['APPLE_ID'] || "your-apple-id@example.com")

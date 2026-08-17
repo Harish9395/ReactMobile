@@ -1,0 +1,19 @@
+default_platform(:android)
+
+platform :android do
+  desc "Build Android AAB (release)"
+  lane :build do
+    gradle(task: "bundleRelease")
+    aab = Dir["app/build/outputs/bundle/release/*.aab"].first
+    if aab
+      UI.message("Built AAB: #{aab}")
+    else
+      UI.user_error!("AAB not found. Check Gradle output and that prebuild ran successfully.")
+    end
+  end
+
+  desc "Build release APK"
+  lane :apk do
+    gradle(task: "assembleRelease")
+  end
+end

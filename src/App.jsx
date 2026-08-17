@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, Pressable, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import Ionicons from 'react-native-vector-icons/Ionicons'
 
 const initialTasks = [
   { id: 1, title: 'Review project brief', meta: 'Work  ·  25 min', done: true, color: 'coral' },

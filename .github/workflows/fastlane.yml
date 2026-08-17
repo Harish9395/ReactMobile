@@ -1,0 +1,133 @@
+name: Fastlane CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  android:
+    name: Android Fastlane build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Install Fastlane
+        run: sudo gem install fastlane -NV
+
+      - name: Build Android AAB with Fastlane
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: npm run fastlane:android
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: android/app/build/outputs/**/*.aab
+
+      - name: Find built artifact
+        id: find_artifact
+        run: |
+          set -e
+          ARTIFACT=$(find android -type f \( -name "*.apk" -o -name "*.aab" \) -print -quit || true)
+          if [ -z "$ARTIFACT" ]; then
+            echo "No APK/AAB artifact found"
+            exit 1
+          fi
+          echo "artifact=$ARTIFACT" >> $GITHUB_OUTPUT
+          BASENAME=$(basename "$ARTIFACT")
+          echo "artifact_name=$BASENAME" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact to Sauce Labs storage
+        id: sauce_upload
+        env:
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+          SAUCE_REGION: ${{ secrets.SAUCE_REGION }}
+        run: |
+          set -e
+          FILE=${{ steps.find_artifact.outputs.artifact }}
+          NAME=${{ steps.find_artifact.outputs.artifact_name }}
+          SAUCE_REGION=${SAUCE_REGION:-eu-central-1}
+          API_URL="https://api.${SAUCE_REGION}.saucelabs.com/v1/storage/upload"
+          echo "Uploading $FILE to $API_URL as $NAME"
+          RESPONSE=$(curl -s -u "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" -X POST "$API_URL" -F name="$NAME" -F payload=@"$FILE")
+          echo "$RESPONSE" > sauce-upload-response.json
+          echo "sauce_response<<EOF" >> $GITHUB_OUTPUT
+          cat sauce-upload-response.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run Sauce Labs Appium smoke test
+        env:
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+          SAUCE_APP: "storage:filename=${{ steps.find_artifact.outputs.artifact_name }}"
+          SAUCE_REGION: ${{ secrets.SAUCE_REGION }}
+        run: |
+          node --version
+          npm --version
+          node tests/sauce-smoke.mjs
+
+  ios:
+    name: iOS Fastlane build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # NOTE: This workflow assumes native `android/` and `ios/` folders are present in the repository.
+      # If you previously used Expo, run `expo prebuild` locally and commit the generated folders.
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: Install Fastlane and CocoaPods
+        run: |
+          gem install fastlane -NV
+          gem install cocoapods -NV
+
+      - name: Install pods
+        working-directory: ios
+        run: pod install --repo-update
+
+      - name: Build iOS IPA with Fastlane
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_PASSWORD }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        run: npm run fastlane:ios
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: ios/**/*.ipa

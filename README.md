@@ -1,6 +1,6 @@
 # Daily Focus
 
-A React Native mobile app for tracking daily tasks and building a consistent routine. It runs on Android and iOS through Expo.
+A React Native mobile app for tracking daily tasks and building a consistent routine. It runs on Android and iOS.
 
 ## Features
 
@@ -10,62 +10,29 @@ A React Native mobile app for tracking daily tasks and building a consistent rou
 - View a daily streak
 - Native Android and iOS experience
 
-## Run Locally
+## Build Locally with Fastlane
+
+This repository now uses Fastlane for native builds. It expects native `android/` and `ios/` folders to already exist in the repo (either committed after running `expo prebuild` locally or created manually).
 
 Install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
-Start Expo:
+Android (Linux/macOS/CI):
 
 ```bash
-npm start
+npm run build:android:fastlane
 ```
 
-Then scan the QR code with Expo Go, or use one of these commands:
+iOS (macOS required):
 
 ```bash
-npm run android
-npm run ios
+npm run build:ios:fastlane
 ```
 
-For Windows PowerShell systems where `npm.ps1` is blocked, use:
-
-```powershell
-npm.cmd install
-npm.cmd start
-```
-
-## Build Android APK / iOS IPA
-
-Install EAS CLI and log in to Expo:
-
-```bash
-npm install --global eas-cli
-eas login
-```
-
-Create the native build configuration:
-
-```bash
-eas build:configure
-```
-
-Build an Android APK for testing:
-
-```bash
-eas build --platform android --profile preview
-```
-
-Build an Android or iOS production release:
-
-```bash
-eas build --platform all --profile production
-```
-
-Android builds produce an APK or AAB. iOS builds produce an IPA and require an Apple Developer account.
+See [FASTLANE.md](FASTLANE.md) for more details about signing and CI.
 
 ## Build and Upload to Sauce Labs
 
