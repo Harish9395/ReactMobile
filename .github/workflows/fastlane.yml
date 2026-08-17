@@ -14,6 +14,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify Android native project exists
+        run: |
+          if [ ! -f android/gradlew ]; then
+            echo "ERROR: android/gradlew not found. Native Android project must exist for Fastlane to build." >&2
+            echo "Create it locally with one of the following options:" >&2
+            echo "  1) Use React Native CLI: npx react-native init . --directory ./ (or create a new project and copy the android/ folder)" >&2
+            echo "  2) If you previously used Expo: run 'expo prebuild' locally and commit the generated 'android/' folder." >&2
+            echo "After adding the native 'android/' folder, commit and re-run the workflow." >&2
+            exit 1
+          fi
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
